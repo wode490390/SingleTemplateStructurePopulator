@@ -1,0 +1,8 @@
+main: cn.wode490390.nukkit.singletspop.SingleTemplateStructurePopulator
+name: "SingleTemplateStructurePopulator"
+description: "Single-template structure populator plugin for Nukkit"
+author: "wode490390"
+website: "http://wode490390.cn/"
+version: "${pom.version}"
+api: ["1.0.0"]
+load: STARTUP

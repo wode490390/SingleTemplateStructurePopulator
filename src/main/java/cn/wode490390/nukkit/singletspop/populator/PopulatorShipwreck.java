@@ -1,0 +1,243 @@
+package cn.wode490390.nukkit.singletspop.populator;
+
+import cn.nukkit.Server;
+import cn.nukkit.level.ChunkManager;
+import cn.nukkit.level.Level;
+import cn.nukkit.level.biome.EnumBiome;
+import cn.nukkit.level.format.FullChunk;
+import cn.nukkit.level.format.generic.BaseFullChunk;
+import cn.nukkit.level.generator.populator.type.Populator;
+import cn.nukkit.math.BlockVector3;
+import cn.nukkit.math.NukkitRandom;
+import cn.nukkit.nbt.tag.CompoundTag;
+import cn.nukkit.nbt.tag.ListTag;
+import cn.wode490390.nukkit.singletspop.SingleTemplateStructurePopulator;
+import cn.wode490390.nukkit.singletspop.block.actor.BlockActorId;
+import cn.wode490390.nukkit.singletspop.loot.ShipwreckMapChest;
+import cn.wode490390.nukkit.singletspop.loot.ShipwreckSupplyChest;
+import cn.wode490390.nukkit.singletspop.loot.ShipwreckTreasureChest;
+import cn.wode490390.nukkit.singletspop.scheduler.CallbackableChunkGenerationTask;
+import cn.wode490390.nukkit.singletspop.scheduler.LootSpawnTask;
+import cn.wode490390.nukkit.singletspop.template.ReadOnlyLegacyStructureTemplate;
+import cn.wode490390.nukkit.singletspop.template.ReadableStructureTemplate;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Consumer;
+
+public class PopulatorShipwreck extends Populator implements CallbackableTemplateStructurePopulator {
+
+    protected static final ReadableStructureTemplate WITH_MAST = new ReadOnlyLegacyStructureTemplate().load(SingleTemplateStructurePopulator.loadNBT("structures/shipwreck/swwithmast.nbt"));
+    protected static final ReadableStructureTemplate UPSIDEDOWN_FULL = new ReadOnlyLegacyStructureTemplate().load(SingleTemplateStructurePopulator.loadNBT("structures/shipwreck/swupsidedownfull.nbt"));
+    protected static final ReadableStructureTemplate UPSIDEDOWN_FRONTHALF = new ReadOnlyLegacyStructureTemplate().load(SingleTemplateStructurePopulator.loadNBT("structures/shipwreck/swupsidedownfronthalf.nbt"));
+    protected static final ReadableStructureTemplate UPSIDEDOWN_BACKHALF = new ReadOnlyLegacyStructureTemplate().load(SingleTemplateStructurePopulator.loadNBT("structures/shipwreck/swupsidedownbackhalf.nbt"));
+    protected static final ReadableStructureTemplate SIDEWAYS_FULL = new ReadOnlyLegacyStructureTemplate().load(SingleTemplateStructurePopulator.loadNBT("structures/shipwreck/swsidewaysfull.nbt"));
+    protected static final ReadableStructureTemplate SIDEWAYS_FRONTHALF = new ReadOnlyLegacyStructureTemplate().load(SingleTemplateStructurePopulator.loadNBT("structures/shipwreck/swsidewaysfronthalf.nbt"));
+    protected static final ReadableStructureTemplate SIDEWAYS_BACKHALF = new ReadOnlyLegacyStructureTemplate().load(SingleTemplateStructurePopulator.loadNBT("structures/shipwreck/swsidewaysbackhalf.nbt"));
+    protected static final ReadableStructureTemplate RIGHTSIDEUP_FULL = new ReadOnlyLegacyStructureTemplate().load(SingleTemplateStructurePopulator.loadNBT("structures/shipwreck/swrightsideupfull.nbt"));
+    protected static final ReadableStructureTemplate RIGHTSIDEUP_FRONTHALF = new ReadOnlyLegacyStructureTemplate().load(SingleTemplateStructurePopulator.loadNBT("structures/shipwreck/swrightsideupfronthalf.nbt"));
+    protected static final ReadableStructureTemplate RIGHTSIDEUP_BACKHALF = new ReadOnlyLegacyStructureTemplate().load(SingleTemplateStructurePopulator.loadNBT("structures/shipwreck/swrightsideupbackhalf.nbt"));
+    protected static final ReadableStructureTemplate WITH_MAST_DEGRADED = new ReadOnlyLegacyStructureTemplate().load(SingleTemplateStructurePopulator.loadNBT("structures/shipwreck/swwithmastdegraded.nbt"));
+    protected static final ReadableStructureTemplate UPSIDEDOWN_FULL_DEGRADED = new ReadOnlyLegacyStructureTemplate().load(SingleTemplateStructurePopulator.loadNBT("structures/shipwreck/swupsidedownfulldegraded.nbt"));
+    protected static final ReadableStructureTemplate UPSIDEDOWN_FRONTHALF_DEGRADED = new ReadOnlyLegacyStructureTemplate().load(SingleTemplateStructurePopulator.loadNBT("structures/shipwreck/swupsidedownfronthalfdegraded.nbt"));
+    protected static final ReadableStructureTemplate UPSIDEDOWN_BACKHALF_DEGRADED = new ReadOnlyLegacyStructureTemplate().load(SingleTemplateStructurePopulator.loadNBT("structures/shipwreck/swupsidedownbackhalfdegraded.nbt"));
+    protected static final ReadableStructureTemplate SIDEWAYS_FULL_DEGRADED = new ReadOnlyLegacyStructureTemplate().load(SingleTemplateStructurePopulator.loadNBT("structures/shipwreck/swsidewaysfulldegraded.nbt"));
+    protected static final ReadableStructureTemplate SIDEWAYS_FRONTHALF_DEGRADED = new ReadOnlyLegacyStructureTemplate().load(SingleTemplateStructurePopulator.loadNBT("structures/shipwreck/swsidewaysfronthalfdegraded.nbt"));
+    protected static final ReadableStructureTemplate SIDEWAYS_BACKHALF_DEGRADED = new ReadOnlyLegacyStructureTemplate().load(SingleTemplateStructurePopulator.loadNBT("structures/shipwreck/swsidewaysbackhalfdegraded.nbt"));
+    protected static final ReadableStructureTemplate RIGHTSIDEUP_FULL_DEGRADED = new ReadOnlyLegacyStructureTemplate().load(SingleTemplateStructurePopulator.loadNBT("structures/shipwreck/swrightsideupfulldegraded.nbt"));
+    protected static final ReadableStructureTemplate RIGHTSIDEUP_FRONTHALF_DEGRADED = new ReadOnlyLegacyStructureTemplate().load(SingleTemplateStructurePopulator.loadNBT("structures/shipwreck/swrightsideupfronthalfdegraded.nbt"));
+    protected static final ReadableStructureTemplate RIGHTSIDEUP_BACKHALF_DEGRADED = new ReadOnlyLegacyStructureTemplate().load(SingleTemplateStructurePopulator.loadNBT("structures/shipwreck/swrightsideupbackhalfdegraded.nbt"));
+
+    protected static final ReadableStructureTemplate[] STRUCTURE_LOCATION_BEACHED = new ReadableStructureTemplate[]{
+            WITH_MAST,
+            SIDEWAYS_FULL,
+            SIDEWAYS_FRONTHALF,
+            SIDEWAYS_BACKHALF,
+            RIGHTSIDEUP_FULL,
+            RIGHTSIDEUP_FRONTHALF,
+            RIGHTSIDEUP_BACKHALF,
+            WITH_MAST_DEGRADED,
+            RIGHTSIDEUP_FULL_DEGRADED,
+            RIGHTSIDEUP_FRONTHALF_DEGRADED,
+            RIGHTSIDEUP_BACKHALF_DEGRADED
+    };
+
+    protected static final ReadableStructureTemplate[] STRUCTURE_LOCATION_OCEAN = new ReadableStructureTemplate[]{
+            WITH_MAST,
+            UPSIDEDOWN_FULL,
+            UPSIDEDOWN_FRONTHALF,
+            UPSIDEDOWN_BACKHALF,
+            SIDEWAYS_FULL,
+            SIDEWAYS_FRONTHALF,
+            SIDEWAYS_BACKHALF,
+            RIGHTSIDEUP_FULL,
+            RIGHTSIDEUP_FRONTHALF,
+            RIGHTSIDEUP_BACKHALF,
+            WITH_MAST_DEGRADED,
+            UPSIDEDOWN_FULL_DEGRADED,
+            UPSIDEDOWN_FRONTHALF_DEGRADED,
+            UPSIDEDOWN_BACKHALF_DEGRADED,
+            SIDEWAYS_FULL_DEGRADED,
+            SIDEWAYS_FRONTHALF_DEGRADED,
+            SIDEWAYS_BACKHALF_DEGRADED,
+            RIGHTSIDEUP_FULL_DEGRADED,
+            RIGHTSIDEUP_FRONTHALF_DEGRADED,
+            RIGHTSIDEUP_BACKHALF_DEGRADED
+    };
+
+    protected static final int SPACING = 24;
+    protected static final int SEPARATION = 4;
+
+    protected final Map<Long, Set<Long>> waitingChunks = Maps.newConcurrentMap();
+
+    @Override
+    public void populate(ChunkManager level, int chunkX, int chunkZ, NukkitRandom random, FullChunk chunk) {
+        int biome = chunk.getBiomeId(0, 0);
+        if ((biome == EnumBiome.OCEAN.id || biome == EnumBiome.DEEP_OCEAN.id || biome == EnumBiome.FROZEN_OCEAN.id
+                || biome == EnumBiome.BEACH.id || (biome >= 44 && biome <= 50))
+                && chunkX == (((chunkX < 0 ? (chunkX - SPACING + 1) : chunkX) / SPACING) * SPACING) + random.nextBoundedInt(SPACING - SEPARATION)
+                && chunkZ == (((chunkZ < 0 ? (chunkZ - SPACING + 1) : chunkZ) / SPACING) * SPACING) + random.nextBoundedInt(SPACING - SEPARATION)) {
+            ReadableStructureTemplate template;
+            boolean isBeached;
+
+            if (biome == EnumBiome.BEACH.id) {
+                template = STRUCTURE_LOCATION_BEACHED[random.nextBoundedInt(STRUCTURE_LOCATION_BEACHED.length)];
+                isBeached = true;
+            } else {
+                template = STRUCTURE_LOCATION_OCEAN[random.nextBoundedInt(STRUCTURE_LOCATION_OCEAN.length)];
+                isBeached = false;
+            }
+
+            BlockVector3 size = template.getSize();
+            int sumY = 0;
+            int blockCount = 0;
+
+            for (int x = 0; x < size.getX() && x < 16; x++) {
+                for (int z = 0; z < size.getZ() && z < 16; z++) {
+                    int y = chunk.getHighestBlockAt(x, z);
+
+                    if (!isBeached) {
+                        y = Math.min(64, y);
+
+                        int id = chunk.getBlockId(x, y, z);
+                        while ((id == WATER || id == STILL_WATER) && y > 0) {
+                            id = level.getBlockIdAt(x, --y, z);
+                        }
+                    }
+
+                    sumY += y;
+                    blockCount++;
+                }
+            }
+
+            int y = sumY / blockCount;
+            if (!isBeached) {
+                y = Math.min(64, y);
+            }
+
+            int seed = random.nextInt();
+            boolean isLarge = false;
+
+            Set<BaseFullChunk> chunks = Sets.newHashSet();
+            Set<Long> indexes = Sets.newConcurrentHashSet();
+
+            if (size.getX() > 16) {
+                isLarge = true;
+
+                BaseFullChunk ck = level.getChunk(chunkX + 1, chunkZ);
+                if (!ck.isGenerated()) {
+                    chunks.add(ck);
+                    indexes.add(Level.chunkHash(ck.getX(), chunkZ));
+                }
+            }
+            if (size.getZ() > 16) {
+                isLarge = true;
+
+                BaseFullChunk ck = level.getChunk(chunkX, chunkZ + 1);
+                if (!ck.isGenerated()) {
+                    chunks.add(ck);
+                    indexes.add(Level.chunkHash(chunkX, ck.getZ()));
+                }
+            }
+
+            if (!chunks.isEmpty()) {
+                int definiteY = y;
+
+                this.waitingChunks.put(Level.chunkHash(chunkX, chunkZ), indexes);
+                for (BaseFullChunk ck : chunks) {
+                    Server.getInstance().getScheduler().scheduleAsyncTask(null, new CallbackableChunkGenerationTask(
+                            chunk.getProvider().getLevel(), ck, this,
+                            populator -> populator.generateChunkCallback(template, seed, level, chunkX, chunkZ, definiteY, ck.getX(), ck.getZ())));
+                }
+                return;
+            }
+
+            if (isLarge) {
+                this.placeInLevel(level, chunkX, chunkZ, template, seed, y);
+            } else {
+                random.setSeed(seed);
+
+                BlockVector3 vec = new BlockVector3(chunkX << 4, y, chunkZ << 4);
+                template.placeInChunk(chunk, random, vec, 100, getBlockActorProcessor(chunk, random));
+
+                SingleTemplateStructurePopulator.debug(this.getClass().getSimpleName(), vec.x, vec.y, vec.z);
+            }
+        }
+    }
+
+    protected void placeInLevel(ChunkManager level, int chunkX, int chunkZ, ReadableStructureTemplate template, int seed, int y) {
+        NukkitRandom random = new NukkitRandom(seed);
+
+        BlockVector3 vec = new BlockVector3(chunkX << 4, y, chunkZ << 4);
+        template.placeInLevel(level, random, vec, 100, getBlockActorProcessor(level.getChunk(chunkX, chunkZ), random));
+
+        this.waitingChunks.remove(Level.chunkHash(chunkX, chunkZ));
+
+        SingleTemplateStructurePopulator.debug(this.getClass().getSimpleName(), vec.x, vec.y, vec.z);
+    }
+
+    @Override
+    public void generateChunkCallback(ReadableStructureTemplate template, int seed, ChunkManager level, int startChunkX, int startChunkZ, int y, int chunkX, int chunkZ) {
+        Set<Long> indexes = this.waitingChunks.get(Level.chunkHash(startChunkX, startChunkZ));
+        indexes.remove(Level.chunkHash(chunkX, chunkZ));
+        if (indexes.isEmpty()) {
+            this.placeInLevel(level, startChunkX, startChunkZ, template, seed, y);
+        }
+    }
+
+    protected static Consumer<CompoundTag> getBlockActorProcessor(FullChunk chunk, NukkitRandom random) {
+        return nbt -> {
+            if (nbt.getString("id").equals(BlockActorId.STRUCTURE_BLOCK)) {
+                switch (nbt.getString("metadata")) {
+                    case "supplyChest":
+                        ListTag<CompoundTag> itemList = new ListTag<>("Items");
+                        ShipwreckSupplyChest.get().create(itemList, random);
+
+                        Server.getInstance().getScheduler().scheduleDelayedTask(new LootSpawnTask(chunk.getProvider().getLevel(),
+                                new BlockVector3(nbt.getInt("x"), nbt.getInt("y") - 1, nbt.getInt("z")), itemList), 2);
+                        break;
+                    case "mapChest":
+                        itemList = new ListTag<>("Items");
+                        ShipwreckMapChest.get().create(itemList, random);
+
+                        Server.getInstance().getScheduler().scheduleDelayedTask(new LootSpawnTask(chunk.getProvider().getLevel(),
+                                new BlockVector3(nbt.getInt("x"), nbt.getInt("y") - 1, nbt.getInt("z")), itemList), 2);
+                        break;
+                    case "treasureChest":
+                        itemList = new ListTag<>("Items");
+                        ShipwreckTreasureChest.get().create(itemList, random);
+
+                        Server.getInstance().getScheduler().scheduleDelayedTask(new LootSpawnTask(chunk.getProvider().getLevel(),
+                                new BlockVector3(nbt.getInt("x"), nbt.getInt("y") - 1, nbt.getInt("z")), itemList), 2);
+                        break;
+                }
+            }
+        };
+    }
+
+    public static void init() {
+        //NOOP
+    }
+}
