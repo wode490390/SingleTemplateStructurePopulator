@@ -94,20 +94,17 @@ public class PopulatorShipwreck extends Populator implements CallbackableTemplat
 
     @Override
     public void populate(ChunkManager level, int chunkX, int chunkZ, NukkitRandom random, FullChunk chunk) {
-        int biome = chunk.getBiomeId(0, 0);
+        int biome = chunk.getBiomeId(5, 5);
         if ((biome == EnumBiome.OCEAN.id || biome == EnumBiome.DEEP_OCEAN.id || biome == EnumBiome.FROZEN_OCEAN.id
                 || biome == EnumBiome.BEACH.id || (biome >= 44 && biome <= 50))
                 && chunkX == (((chunkX < 0 ? (chunkX - SPACING + 1) : chunkX) / SPACING) * SPACING) + random.nextBoundedInt(SPACING - SEPARATION)
                 && chunkZ == (((chunkZ < 0 ? (chunkZ - SPACING + 1) : chunkZ) / SPACING) * SPACING) + random.nextBoundedInt(SPACING - SEPARATION)) {
             ReadableStructureTemplate template;
-            boolean isBeached;
 
             if (biome == EnumBiome.BEACH.id) {
                 template = STRUCTURE_LOCATION_BEACHED[random.nextBoundedInt(STRUCTURE_LOCATION_BEACHED.length)];
-                isBeached = true;
             } else {
                 template = STRUCTURE_LOCATION_OCEAN[random.nextBoundedInt(STRUCTURE_LOCATION_OCEAN.length)];
-                isBeached = false;
             }
 
             BlockVector3 size = template.getSize();
@@ -118,13 +115,9 @@ public class PopulatorShipwreck extends Populator implements CallbackableTemplat
                 for (int z = 0; z < size.getZ() && z < 16; z++) {
                     int y = chunk.getHighestBlockAt(x, z);
 
-                    if (!isBeached) {
-                        y = Math.min(64, y);
-
-                        int id = chunk.getBlockId(x, y, z);
-                        while ((id == WATER || id == STILL_WATER) && y > 0) {
-                            id = level.getBlockIdAt(x, --y, z);
-                        }
+                    int id = chunk.getBlockId(x, y, z);
+                    while (FILTER[id] && y > 0) {
+                        id = chunk.getBlockId(x, --y, z);
                     }
 
                     sumY += y;
@@ -133,9 +126,6 @@ public class PopulatorShipwreck extends Populator implements CallbackableTemplat
             }
 
             int y = sumY / blockCount;
-            if (!isBeached) {
-                y = Math.min(64, y);
-            }
 
             int seed = random.nextInt();
             boolean isLarge = false;
@@ -163,13 +153,11 @@ public class PopulatorShipwreck extends Populator implements CallbackableTemplat
             }
 
             if (!chunks.isEmpty()) {
-                int definiteY = y;
-
                 this.waitingChunks.put(Level.chunkHash(chunkX, chunkZ), indexes);
                 for (BaseFullChunk ck : chunks) {
                     Server.getInstance().getScheduler().scheduleAsyncTask(null, new CallbackableChunkGenerationTask(
                             chunk.getProvider().getLevel(), ck, this,
-                            populator -> populator.generateChunkCallback(template, seed, level, chunkX, chunkZ, definiteY, ck.getX(), ck.getZ())));
+                            populator -> populator.generateChunkCallback(template, seed, level, chunkX, chunkZ, y, ck.getX(), ck.getZ())));
                 }
                 return;
             }
@@ -237,7 +225,36 @@ public class PopulatorShipwreck extends Populator implements CallbackableTemplat
         };
     }
 
+    public static final boolean[] FILTER = new boolean[256];
+
     public static void init() {
-        //NOOP
+        FILTER[AIR] = true;
+        FILTER[LOG] = true;
+        FILTER[WATER] = true;
+        FILTER[STILL_WATER] = true;
+        FILTER[LAVA] = true;
+        FILTER[STILL_LAVA] = true;
+        FILTER[LEAVES] = true;
+        FILTER[TALL_GRASS] = true;
+        FILTER[DEAD_BUSH] = true;
+        FILTER[DANDELION] = true;
+        FILTER[RED_FLOWER] = true;
+        FILTER[BROWN_MUSHROOM] = true;
+        FILTER[RED_MUSHROOM] = true;
+        FILTER[SNOW_LAYER] = true;
+        FILTER[ICE] = true;
+        FILTER[CACTUS] = true;
+        FILTER[REEDS] = true;
+        FILTER[PUMPKIN] = true;
+        FILTER[BROWN_MUSHROOM_BLOCK] = true;
+        FILTER[RED_MUSHROOM_BLOCK] = true;
+        FILTER[MELON_BLOCK] = true;
+        FILTER[VINE] = true;
+        FILTER[WATER_LILY] = true;
+        FILTER[COCOA] = true;
+        FILTER[LEAVES2] = true;
+        FILTER[LOG2] = true;
+        FILTER[PACKED_ICE] = true;
+        FILTER[DOUBLE_PLANT] = true;
     }
 }

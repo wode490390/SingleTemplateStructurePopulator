@@ -36,7 +36,7 @@ public class PopulatorFossil extends Populator {
 
     @Override
     public void populate(ChunkManager level, int chunkX, int chunkZ, NukkitRandom random, FullChunk chunk) {
-        int biome = chunk.getBiomeId(0, 0);
+        int biome = chunk.getBiomeId(3, 3);
         if ((biome == EnumBiome.DESERT.id || biome == EnumBiome.DESERT_HILLS.id || biome == EnumBiome.DESERT_M.id
                 || biome == EnumBiome.SWAMP.id || biome == EnumBiome.SWAMPLAND_M.id)
                 && random.nextBoundedInt(64) == (0x1211dfa1 & 63)) { //salted
